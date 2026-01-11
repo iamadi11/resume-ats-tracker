@@ -5,7 +5,8 @@
  * Categorizes skills and calculates alignment score.
  */
 
-import { normalizeSkills, categorizeSkills } from '../extraction/skill-categorizer.js';
+import { normalizeSkills } from '../extraction/skill-normalizer.js';
+import { categorizeSkills } from '../extraction/skill-categorizer.js';
 import { extractFromResume, extractFromJobDescription } from '../extraction/index.js';
 
 /**

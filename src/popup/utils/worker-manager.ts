@@ -37,10 +37,17 @@ class WorkerManager {
     }
 
     try {
-      this.worker = new Worker(
-        new URL('../../scoring/worker/scoring-worker.js', import.meta.url),
-        { type: 'module' }
-      );
+      // For Chrome extensions, workers must be loaded using chrome.runtime.getURL
+      // This avoids Vite trying to bundle the worker during build
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+        const workerUrl = chrome.runtime.getURL('src/scoring/worker/scoring-worker.js');
+        this.worker = new Worker(workerUrl, { type: 'module' });
+      } else {
+        // Development fallback - use direct path (may not work in all cases)
+        // In development, we can skip worker or use main thread
+        console.warn('[Worker Manager] Chrome runtime not available, using fallback');
+        throw new Error('Worker requires Chrome extension context');
+      }
 
       this.worker.addEventListener('message', this.handleWorkerMessage.bind(this));
       this.worker.addEventListener('error', this.handleWorkerError.bind(this));

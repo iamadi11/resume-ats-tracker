@@ -11,13 +11,13 @@ import PerformanceIndicator from './PerformanceIndicator';
 import PrivacyNotice from './PrivacyNotice';
 
 export default function PopupView() {
-  const { state, calculateScore } = useApp();
+  const { state } = useApp();
   
   // Real-time score calculation with debouncing
   const { 
     score: realtimeScore, 
     isCalculating: isRealtimeCalculating,
-    metrics,
+    metrics = { lastDuration: 0 },
     error: realtimeError
   } = useRealtimeScore({
     debounceDelay: 500,

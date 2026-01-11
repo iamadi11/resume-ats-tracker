@@ -131,9 +131,9 @@ function FeedbackItem({ suggestion }: FeedbackItemProps) {
         <p className="text-sm text-gray-800 font-medium mb-1">Suggestion:</p>
         <p className="text-sm text-gray-700">{suggestion.suggestion}</p>
       </div>
-      {suggestion.keywords && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {suggestion.keywords.slice(0, 5).map((keyword, idx) => (
+          {suggestion.keywords && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {suggestion.keywords.slice(0, 5).map((keyword: string, idx: number) => (
             <span
               key={idx}
               className="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded"

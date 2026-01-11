@@ -38,7 +38,18 @@ export default defineConfig({
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
+      },
+      external: (id) => {
+        // Don't bundle worker files - they'll be loaded separately
+        if (id.includes('scoring-worker')) {
+          return true;
+        }
+        return false;
       }
+    },
+    worker: {
+      format: 'es',
+      plugins: () => []
     }
   },
   resolve: {

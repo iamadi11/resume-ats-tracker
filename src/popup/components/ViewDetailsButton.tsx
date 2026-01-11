@@ -3,8 +3,15 @@ import React from 'react';
 export default function ViewDetailsButton() {
   const openSidePanel = async () => {
     try {
-      // Open side panel
-      await chrome.sidePanel.open({ windowId: (await chrome.windows.getCurrent()).id });
+      // Get current window
+      const window = await chrome.windows.getCurrent();
+      if (window?.id !== undefined) {
+        // Open side panel
+        await chrome.sidePanel.open({ windowId: window.id });
+      } else {
+        // Fallback: send message to background
+        chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
+      }
     } catch (error) {
       console.error('Failed to open side panel:', error);
       // Fallback: try alternative method
