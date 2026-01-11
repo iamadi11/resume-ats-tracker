@@ -31,9 +31,11 @@ export default defineConfig({
       },
       output: {
         entryFileNames: (chunkInfo) => {
+          // Service worker and content script go to root
           if (chunkInfo.name === 'content-script' || chunkInfo.name === 'service-worker') {
             return '[name].js';
           }
+          // UI bundles go to assets with hash
           return 'assets/[name]-[hash].js';
         },
         chunkFileNames: 'assets/[name]-[hash].js',
