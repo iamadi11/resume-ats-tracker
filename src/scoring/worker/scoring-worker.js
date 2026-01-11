@@ -90,19 +90,9 @@ async function handleCalculateScore(payload, id) {
     // For now, we'll use a fallback approach
     let calculateATSScore;
     
-    try {
-      // Try dynamic import (works in modern browsers)
-      const module = await import('../scoring-engine.js');
-      calculateATSScore = module.calculateATSScore;
-    } catch (importError) {
-      // Fallback: Use optimized scorer if available
-      try {
-        const optimized = await import('../optimized-scorer.js');
-        calculateATSScore = optimized.calculateATSScoreOptimized;
-      } catch (fallbackError) {
-        throw new Error('Failed to load scoring engine');
-      }
-    }
+    // Import scoring engine dynamically
+    const module = await import('../scoring-engine.js');
+    calculateATSScore = module.calculateATSScore;
     
     const result = calculateATSScore(resumeText, jobText, resume);
     

@@ -24,6 +24,8 @@
     "vite-plugin-static-copy": "^3.1.4"
   },
   "dependencies": {
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^5.4.530",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   }

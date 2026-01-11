@@ -19,6 +19,7 @@ import { onMessage } from '../shared/messaging.js';
 import { MESSAGE_TYPES } from '../shared/constants.js';
 import { handleError, ERROR_TYPES } from '../shared/error-handler.js';
 import { clearAllData, verifyNoDataPersistence } from '../shared/privacy-utils.js';
+import { processResumeFile } from '../processors/file-processor.js';
 
 // Extension lifecycle handlers
 
@@ -84,12 +85,15 @@ const cleanup = onMessage(async (message, sender, sendResponse) => {
         break;
         
       case MESSAGE_TYPES.PROCESS_RESUME:
-        // Process resume file (to be implemented)
-        sendResponse({
-          type: MESSAGE_TYPES.RESUME_PROCESSED,
-          payload: { message: 'Resume processing not yet implemented' }
+        // Process resume file
+        handleProcessResume(message.payload, sendResponse).catch(error => {
+          console.error('[Service Worker] Error processing resume:', error);
+          sendResponse({
+            type: MESSAGE_TYPES.RESUME_PROCESS_ERROR,
+            payload: { error: error.message || 'Failed to process resume' }
+          });
         });
-        break;
+        return true; // Keep channel open for async response
         
       case MESSAGE_TYPES.PROCESS_JOB_DESC:
         // Process job description (to be implemented)
@@ -232,3 +236,73 @@ export function isJobPortal(url) {
   }
 }
 
+
+/**
+ * Handle resume file processing
+ * 
+ * @param {Object} payload - File processing payload
+ * @param {Array<number>} payload.file - File data as array of bytes
+ * @param {string} payload.fileName - File name
+ * @param {string} payload.fileType - File MIME type
+ * @param {Function} sendResponse - Response callback
+ */
+async function handleProcessResume(payload, sendResponse) {
+  try {
+    const { file: fileDataArray, fileName, fileType } = payload;
+
+    if (!fileDataArray || !Array.isArray(fileDataArray)) {
+      throw new Error('Invalid file data');
+    }
+
+    // Convert array back to Uint8Array and then to ArrayBuffer
+    const uint8Array = new Uint8Array(fileDataArray);
+    const arrayBuffer = uint8Array.buffer;
+
+    // Create a File-like object for the processor
+    const blob = new Blob([arrayBuffer], { type: fileType });
+    const file = new File([blob], fileName, { type: fileType });
+
+    // Process the file
+    const result = await processResumeFile(file, {
+      format: detectFormatFromMimeType(fileType, fileName)
+    });
+
+    if (result.success) {
+      sendResponse({
+        type: MESSAGE_TYPES.RESUME_PROCESSED,
+        payload: { resume: result.resume }
+      });
+    } else {
+      sendResponse({
+        type: MESSAGE_TYPES.RESUME_PROCESS_ERROR,
+        payload: { error: result.error || 'Failed to process resume' }
+      });
+    }
+  } catch (error) {
+    console.error('[Service Worker] Resume processing error:', error);
+    sendResponse({
+      type: MESSAGE_TYPES.RESUME_PROCESS_ERROR,
+      payload: { error: error.message || 'Failed to process resume' }
+    });
+  }
+}
+
+/**
+ * Detect file format from MIME type and filename
+ */
+function detectFormatFromMimeType(mimeType, fileName) {
+  const type = mimeType?.toLowerCase() || '';
+  const name = fileName?.toLowerCase() || '';
+
+  if (type === 'application/pdf' || name.endsWith('.pdf')) {
+    return 'pdf';
+  }
+  if (type.includes('wordprocessingml') || type.includes('msword') || name.endsWith('.docx') || name.endsWith('.doc')) {
+    return 'docx';
+  }
+  if (type.startsWith('text/') || name.endsWith('.txt')) {
+    return 'text';
+  }
+
+  return undefined;
+}
