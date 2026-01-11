@@ -24,7 +24,7 @@ class WorkerManager {
   private pendingRequests: Map<string, {
     resolve: (value: any) => void;
     reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
+    timeout: ReturnType<typeof setTimeout>;
   }> = new Map();
   private requestTimeout = 30000; // 30 seconds
 

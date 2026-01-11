@@ -39,7 +39,7 @@ export function useRealtimeScore(options: UseRealtimeScoreOptions = {}) {
   
   const { metrics, startMeasurement, endMeasurement } = usePerformanceMonitor();
   
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastInputHashRef = useRef<string>('');
 

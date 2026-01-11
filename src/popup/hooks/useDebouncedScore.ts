@@ -31,7 +31,7 @@ export function useDebouncedScore(options: UseDebouncedScoreOptions = {}) {
   const { state } = useApp();
   const [debouncedScore, setDebouncedScore] = useState<ATSResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const calculateScore = useCallback(async () => {
