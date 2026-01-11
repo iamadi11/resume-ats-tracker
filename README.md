@@ -21,4 +21,8 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete architecture documentation
 
 ## Status
 
-🚧 **In Design Phase** - Architecture documentation complete. Implementation pending.
+✅ **Foundation Complete** - Manifest V3 setup, service worker, content scripts, and message-passing infrastructure are in place.
+
+🚧 **Implementation Pending** - UI components, file processing, scoring engine, and scrapers need to be implemented.
+
+See [SETUP.md](./SETUP.md) for setup instructions and [PERMISSIONS.md](./PERMISSIONS.md) for permission details.
