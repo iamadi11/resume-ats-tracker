@@ -12,6 +12,7 @@
 
 import { sendMessageFromContent, onMessage } from '../shared/messaging.js';
 import { MESSAGE_TYPES, CONTENT_SCRIPT_ID } from '../shared/constants.js';
+import { extractJobFromPage, getPortalName } from './scrapers/index.js';
 
 // Mark that content script is loaded
 if (!window[CONTENT_SCRIPT_ID]) {
@@ -42,7 +43,7 @@ function setupMessageListeners() {
       
       switch (message.type) {
         case MESSAGE_TYPES.EXTRACT_JOB_FROM_PAGE:
-          // Extract job description from current page (to be implemented)
+          // Extract job description from current page
           const jobData = extractJobDescription();
           sendResponse({
             type: MESSAGE_TYPES.JOB_EXTRACTED,
@@ -88,20 +89,42 @@ function setupMessageListeners() {
 
 /**
  * Extract job description from current page
- * (Placeholder - to be implemented with portal-specific scrapers)
+ * Uses portal-specific scrapers with generic fallback
  * 
- * @returns {Object} Extracted job data
+ * @returns {Object} Extracted job data with success status
  */
 function extractJobDescription() {
-  // This will be implemented with portal-specific scrapers
   console.log('[Content Script] Extracting job description from page');
   
-  return {
-    url: window.location.href,
-    title: document.title,
-    text: document.body.innerText.substring(0, 1000), // Placeholder
-    extractedAt: Date.now()
-  };
+  try {
+    const result = extractJobFromPage();
+    
+    // Return structured result (message sending handled by caller)
+    return {
+      success: result.success,
+      text: result.text || '',
+      title: result.title || '',
+      company: result.company || '',
+      location: result.location || '',
+      url: result.url || window.location.href,
+      portal: result.portal || 'unknown',
+      extractedAt: result.extractedAt || Date.now(),
+      error: result.error
+    };
+  } catch (error) {
+    console.error('[Content Script] Error extracting job description:', error);
+    return {
+      success: false,
+      text: '',
+      title: '',
+      company: '',
+      location: '',
+      url: window.location.href,
+      portal: getPortalName(),
+      extractedAt: Date.now(),
+      error: error.message
+    };
+  }
 }
 
 /**
