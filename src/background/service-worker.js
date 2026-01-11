@@ -104,10 +104,41 @@ const cleanup = onMessage(async (message, sender, sendResponse) => {
         
       case MESSAGE_TYPES.CALCULATE_SCORE:
         // Calculate ATS score (to be implemented)
+        // This will call the scoring engine
         sendResponse({
           type: MESSAGE_TYPES.SCORE_CALCULATED,
           payload: { message: 'Score calculation not yet implemented' }
         });
+        break;
+        
+      case 'GET_FEEDBACK':
+        // Generate feedback (to be implemented)
+        sendResponse({
+          type: 'FEEDBACK_GENERATED',
+          payload: { message: 'Feedback generation not yet implemented' }
+        });
+        break;
+        
+      case 'OPEN_SIDE_PANEL':
+        // Open side panel
+        chrome.sidePanel.open({}).catch(() => {
+          // Side panel might not be available
+        });
+        sendResponse({ type: MESSAGE_TYPES.PONG });
+        break;
+        
+      case 'GET_CURRENT_STATE':
+        // Return current state (to be implemented with storage)
+        sendResponse({
+          score: null,
+          feedback: null
+        });
+        break;
+        
+      case 'SCORE_UPDATE':
+        // Store score update for side panel
+        // Side panel will listen for this
+        sendResponse({ type: MESSAGE_TYPES.PONG });
         break;
         
       case MESSAGE_TYPES.EXTRACT_JOB_FROM_PAGE:
