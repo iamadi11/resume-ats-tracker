@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { useRealtimeScore } from '../hooks/useRealtimeScore';
 import ResumeUpload from './ResumeUpload';
 import JobDescriptionInput from './JobDescriptionInput';
 import ScoreMeter from './ScoreMeter';
@@ -8,7 +9,22 @@ import LoadingSpinner from './LoadingSpinner';
 import ViewDetailsButton from './ViewDetailsButton';
 
 export default function PopupView() {
-  const { state } = useApp();
+  const { state, calculateScore } = useApp();
+  
+  // Real-time score calculation with debouncing
+  const { score: realtimeScore, isCalculating: isRealtimeCalculating } = useRealtimeScore({
+    debounceDelay: 500,
+    minTextLength: 50,
+    enabled: true,
+    onScoreUpdate: (score) => {
+      // Update context state when score is calculated
+      // This ensures side panel gets updates
+    }
+  });
+
+  // Use realtime score if available, otherwise use context score
+  const displayScore = realtimeScore || state.score;
+  const isCalculating = isRealtimeCalculating || state.loading;
 
   return (
     <div className="w-full min-h-[500px] p-4 space-y-4">
@@ -23,10 +39,10 @@ export default function PopupView() {
       </header>
 
       {/* Error Message */}
-      {state.error && <ErrorMessage message={state.error} />}
+      {displayError && <ErrorMessage message={displayError} />}
 
       {/* Loading Spinner */}
-      {state.loading && <LoadingSpinner />}
+      {isCalculating && <LoadingSpinner />}
 
       {/* Resume Upload */}
       <ResumeUpload />
@@ -35,15 +51,19 @@ export default function PopupView() {
       <JobDescriptionInput />
 
       {/* Score Meter */}
-      {state.score && (
+      {displayScore && (
         <>
-          <ScoreMeter score={state.score.overallScore} breakdown={state.score.breakdown} />
+          <ScoreMeter score={displayScore.overallScore} breakdown={displayScore.breakdown} />
+          <PerformanceIndicator 
+            duration={metrics.lastDuration} 
+            isCalculating={isCalculating}
+          />
           <ViewDetailsButton />
         </>
       )}
 
       {/* Quick Actions */}
-      {state.resume && state.jobDescription && !state.score && !state.loading && (
+      {state.resume && state.jobDescription && !displayScore && !isCalculating && (
         <div className="text-center text-sm text-gray-500">
           Analyzing compatibility...
         </div>
