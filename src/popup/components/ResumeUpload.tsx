@@ -1,10 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import LoadingSpinner from './LoadingSpinner';
 
 export default function ResumeUpload() {
   const { state, uploadResume } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = async (file: File) => {
     if (file.type !== 'application/pdf' && 
@@ -19,7 +21,12 @@ export default function ResumeUpload() {
       return;
     }
 
-    await uploadResume(file);
+    setIsUploading(true);
+    try {
+      await uploadResume(file);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -74,7 +81,16 @@ export default function ResumeUpload() {
           aria-label="Upload resume file"
         />
 
-        {state.resume ? (
+        {isUploading || state.loading ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center">
+              <LoadingSpinner />
+            </div>
+            <p className="text-sm font-medium text-gray-700">
+              Uploading and processing resume...
+            </p>
+          </div>
+        ) : state.resume ? (
           <div className="space-y-2">
             <div className="flex items-center justify-center">
               <svg

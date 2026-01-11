@@ -152,14 +152,14 @@ const cleanup = onMessage(async (message, sender, sendResponse) => {
         
       case MESSAGE_TYPES.EXTRACT_JOB_FROM_PAGE:
         // Request job extraction from content script
-        if (sender.tab?.id) {
-          // Forward to content script (to be implemented)
+        handleExtractJobFromPage(sender.tab?.id, sendResponse).catch(error => {
+          console.error('[Service Worker] Error extracting job:', error);
           sendResponse({
-            type: MESSAGE_TYPES.JOB_EXTRACTED,
-            payload: { message: 'Job extraction not yet implemented' }
+            type: MESSAGE_TYPES.ERROR,
+            payload: { error: error.message || 'Failed to extract job description' }
           });
-        }
-        break;
+        });
+        return true; // Keep channel open for async response
         
       default:
         console.warn('[Service Worker] Unknown message type:', message.type);

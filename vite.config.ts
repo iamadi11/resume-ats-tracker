@@ -21,6 +21,7 @@ export default defineConfig({
   ],
   build: {
     outDir: 'dist',
+    chunkSizeWarningLimit: 600, // Increase limit since PDF/DOCX parsers are legitimately large
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'src/popup/index.html'),
@@ -39,7 +40,25 @@ export default defineConfig({
           return 'assets/[name]-[hash].js';
         },
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks: (id) => {
+          // Split PDF.js into separate chunk (it's large)
+          if (id.includes('pdfjs-dist') || id.includes('pdf.js')) {
+            return 'pdf';
+          }
+          // Split mammoth into separate chunk
+          if (id.includes('mammoth')) {
+            return 'docx';
+          }
+          // Split node_modules into vendor chunk
+          if (id.includes('node_modules')) {
+            // Keep React together
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            return 'vendor';
+          }
+        }
       },
       external: (id) => {
         // Don't bundle worker files - they'll be loaded separately
@@ -60,4 +79,3 @@ export default defineConfig({
     }
   }
 });
-

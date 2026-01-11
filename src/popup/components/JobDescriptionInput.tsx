@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { MESSAGE_TYPES } from '../../shared/constants.js';
 
 export default function JobDescriptionInput() {
   const { state, setJobDescription } = useApp();
@@ -38,17 +39,24 @@ export default function JobDescriptionInput() {
 
   const handleExtractFromPage = async () => {
     try {
+      setIsPasting(true); // Reuse loading state
       // Request job extraction from content script
       const response = await chrome.runtime.sendMessage({
-        type: 'EXTRACT_JOB_FROM_PAGE'
+        type: MESSAGE_TYPES.EXTRACT_JOB_FROM_PAGE
       });
 
-      if (response && response.payload && response.payload.text) {
+      if (response && response.type === MESSAGE_TYPES.JOB_EXTRACTED && response.payload && response.payload.text) {
         setText(response.payload.text);
         setJobDescription(response.payload.text);
+      } else if (response && response.payload && response.error) {
+        alert(`Failed to extract job description: ${response.payload.error}`);
       }
     } catch (error) {
       console.error('Failed to extract job description:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to extract job description: ${errorMessage}`);
+    } finally {
+      setIsPasting(false);
     }
   };
 

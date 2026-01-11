@@ -44,11 +44,18 @@ function setupMessageListeners() {
       switch (message.type) {
         case MESSAGE_TYPES.EXTRACT_JOB_FROM_PAGE:
           // Extract job description from current page
-          const jobData = extractJobDescription();
-          sendResponse({
-            type: MESSAGE_TYPES.JOB_EXTRACTED,
-            payload: jobData
-          });
+          try {
+            const jobData = extractJobFromPage();
+            sendResponse({
+              type: MESSAGE_TYPES.JOB_EXTRACTED,
+              payload: jobData
+            });
+          } catch (error) {
+            sendResponse({
+              type: MESSAGE_TYPES.ERROR,
+              payload: { error: error.message || 'Failed to extract job description' }
+            });
+          }
           break;
           
         case MESSAGE_TYPES.INJECT_WIDGET:

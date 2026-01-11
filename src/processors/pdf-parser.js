@@ -30,17 +30,25 @@ export async function parsePDF(file) {
       // Try to use global pdfjsLib if available (loaded via script tag)
       if (typeof window !== 'undefined' && window.pdfjsLib) {
         pdfjsLib = window.pdfjsLib;
+      } else if (typeof self !== 'undefined' && self.pdfjsLib) {
+        // Service worker context
+        pdfjsLib = self.pdfjsLib;
       } else {
-        // Try dynamic import (requires build system)
+        // Try dynamic import (works in modern environments)
         pdfjsLib = await import('pdfjs-dist');
-        // Configure worker
+        // Configure worker for browser context
         if (typeof window !== 'undefined') {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        } else if (typeof self !== 'undefined') {
+          // Service worker context - disable worker or use CDN
           pdfjsLib.GlobalWorkerOptions.workerSrc = 
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
       }
     } catch (error) {
-      throw new Error('PDF.js library not loaded. Please include pdfjs-dist or load via CDN.');
+      console.error('[PDF Parser] PDF.js import error:', error);
+      throw new Error(`PDF.js library not loaded: ${error.message}. Please ensure pdfjs-dist is installed.`);
     }
 
     // Convert file to ArrayBuffer if needed
