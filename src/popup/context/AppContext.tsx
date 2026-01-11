@@ -69,20 +69,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      // Convert file to base64 or send to background
-      const arrayBuffer = await file.arrayBuffer();
-      
-      const response = await sendMessage({
-        type: MESSAGE_TYPES.PROCESS_RESUME,
-        payload: { file: Array.from(new Uint8Array(arrayBuffer)), fileName: file.name, fileType: file.type }
-      });
+      // Process file in popup context (has window object, supports PDF.js)
+      // This avoids service worker limitations with PDF.js
+      const { processResumeFile } = await import('../../processors/file-processor.js');
+      const result = await processResumeFile(file);
 
-      if (response.type === MESSAGE_TYPES.RESUME_PROCESSED) {
-        dispatch({ type: 'SET_RESUME', payload: response.payload.resume });
-      } else if (response.type === MESSAGE_TYPES.RESUME_PROCESS_ERROR) {
-        dispatch({ type: 'SET_ERROR', payload: response.payload.error });
+      if (result.success) {
+        dispatch({ type: 'SET_RESUME', payload: result.resume });
+      } else {
+        dispatch({ type: 'SET_ERROR', payload: result.error || 'Failed to process resume' });
       }
     } catch (error) {
+      console.error('[AppContext] Resume processing error:', error);
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to process resume' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });

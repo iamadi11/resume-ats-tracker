@@ -27,23 +27,37 @@ export async function parsePDF(file) {
     let pdfjsLib;
     
     try {
-      // Try to use global pdfjsLib if available (loaded via script tag)
-      if (typeof window !== 'undefined' && window.pdfjsLib) {
-        pdfjsLib = window.pdfjsLib;
-      } else if (typeof self !== 'undefined' && self.pdfjsLib) {
-        // Service worker context
-        pdfjsLib = self.pdfjsLib;
+      // Check if we're in a service worker context (no window object)
+      const isServiceWorker = typeof window === 'undefined' && typeof self !== 'undefined';
+      
+      if (isServiceWorker) {
+        // Service worker context - use dynamic import directly
+        // PDF.js should work in service workers, but we need to handle it carefully
+        const pdfjsModule = await import('pdfjs-dist');
+        pdfjsLib = pdfjsModule.default || pdfjsModule;
+        
+        // In service worker, we can't use worker threads easily
+        // Disable worker by setting to empty string or use a workaround
+        if (pdfjsLib.GlobalWorkerOptions) {
+          // Use CDN worker URL (should work in service worker)
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
       } else {
-        // Try dynamic import (works in modern environments)
-        pdfjsLib = await import('pdfjs-dist');
-        // Configure worker for browser context
-        if (typeof window !== 'undefined') {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = 
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        } else if (typeof self !== 'undefined') {
-          // Service worker context - disable worker or use CDN
-          pdfjsLib.GlobalWorkerOptions.workerSrc = 
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        // Browser context (popup, content script, etc.)
+        // Try to use global pdfjsLib if available (loaded via script tag)
+        if (typeof window !== 'undefined' && window.pdfjsLib) {
+          pdfjsLib = window.pdfjsLib;
+        } else {
+          // Try dynamic import
+          const pdfjsModule = await import('pdfjs-dist');
+          pdfjsLib = pdfjsModule.default || pdfjsModule;
+          
+          // Configure worker for browser context
+          if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 
+              'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          }
         }
       }
     } catch (error) {
