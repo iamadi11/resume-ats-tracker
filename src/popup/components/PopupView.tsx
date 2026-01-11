@@ -7,12 +7,19 @@ import ScoreMeter from './ScoreMeter';
 import ErrorMessage from './ErrorMessage';
 import LoadingSpinner from './LoadingSpinner';
 import ViewDetailsButton from './ViewDetailsButton';
+import PerformanceIndicator from './PerformanceIndicator';
+import PrivacyNotice from './PrivacyNotice';
 
 export default function PopupView() {
   const { state, calculateScore } = useApp();
   
   // Real-time score calculation with debouncing
-  const { score: realtimeScore, isCalculating: isRealtimeCalculating } = useRealtimeScore({
+  const { 
+    score: realtimeScore, 
+    isCalculating: isRealtimeCalculating,
+    metrics,
+    error: realtimeError
+  } = useRealtimeScore({
     debounceDelay: 500,
     minTextLength: 50,
     enabled: true,
@@ -25,6 +32,7 @@ export default function PopupView() {
   // Use realtime score if available, otherwise use context score
   const displayScore = realtimeScore || state.score;
   const isCalculating = isRealtimeCalculating || state.loading;
+  const displayError = realtimeError || state.error;
 
   return (
     <div className="w-full min-h-[500px] p-4 space-y-4">
@@ -68,6 +76,9 @@ export default function PopupView() {
           Analyzing compatibility...
         </div>
       )}
+
+      {/* Privacy Notice */}
+      <PrivacyNotice />
     </div>
   );
 }

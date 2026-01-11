@@ -2,6 +2,8 @@ import React, { createContext, useContext, useReducer, useCallback, useEffect } 
 import { AppState, Resume, JobDescription, ATSResult, Feedback } from '../types';
 import { sendMessage } from '../../shared/messaging.js';
 import { MESSAGE_TYPES } from '../../shared/constants.js';
+import { handleError, ERROR_TYPES } from '../../shared/error-handler.js';
+import { clearAllData } from '../../shared/privacy-utils.js';
 
 interface AppContextType {
   state: AppState;
@@ -104,7 +106,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         payload: { text }
       });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to process job description' });
+      const handledError = handleError(error, ERROR_TYPES.JOB_EXTRACTION);
+      dispatch({ type: 'SET_ERROR', payload: handledError.userMessage });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -179,7 +182,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_ERROR', payload: response.payload.error });
       }
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to calculate score' });
+      const handledError = handleError(error, ERROR_TYPES.SCORE_CALCULATION);
+      dispatch({ type: 'SET_ERROR', payload: handledError.userMessage });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -187,6 +191,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const clearData = useCallback(() => {
     dispatch({ type: 'CLEAR_DATA' });
+    // Clear all data for privacy compliance
+    clearAllData();
   }, []);
 
   // Auto-calculate score when both resume and job description are available

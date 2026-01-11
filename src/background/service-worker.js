@@ -17,6 +17,8 @@
 
 import { onMessage } from '../shared/messaging.js';
 import { MESSAGE_TYPES } from '../shared/constants.js';
+import { handleError, ERROR_TYPES } from '../shared/error-handler.js';
+import { clearAllData, verifyNoDataPersistence } from '../shared/privacy-utils.js';
 
 // Extension lifecycle handlers
 
@@ -50,13 +52,16 @@ self.addEventListener('activate', () => {
  */
 async function initializeSettings() {
   try {
-    await chrome.storage.session.set({
+    // Only store non-sensitive settings
+    // NO resume or job description data is stored
+    await chrome.storage.local.set({
       'settings': {
         enabledPortals: ['linkedin.com', 'indeed.com', 'glassdoor.com'],
         autoExtract: true,
         theme: 'light'
       }
     });
+    console.log('[Service Worker] Settings initialized (no sensitive data)');
   } catch (error) {
     console.error('[Service Worker] Error initializing settings:', error);
   }
