@@ -44,12 +44,19 @@ export async function parsePDF(file) {
           if (!pdfjsLib.GlobalWorkerOptions) {
             pdfjsLib.GlobalWorkerOptions = {};
           }
-          // Set worker source for web app
-          // Use CDN or local path
-          if (typeof window !== 'undefined') {
-            // Use CDN for PDF.js worker (most reliable for web apps)
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-          }
+            // Set worker source for web app
+            // Use local worker from package
+            if (typeof window !== 'undefined') {
+              try {
+                // Import worker as URL - Vite will handle this
+                const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+                pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default || workerModule;
+              } catch (error) {
+                // Fallback: use unpkg CDN which is more reliable
+                const version = pdfjsLib.version || '5.4.530';
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+              }
+            }
         } else {
           // Try dynamic import - pdfjs-dist main entry is build/pdf.mjs
           const pdfjsModule = await import('pdfjs-dist');
@@ -67,10 +74,17 @@ export async function parsePDF(file) {
             if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
               pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
             } else {
-              // Use CDN for PDF.js worker (most reliable for web apps)
-              // Get version from pdfjsLib or use fallback
-              const version = pdfjsLib.version || '5.4.530';
-              pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+              // For Vite web apps, use the worker from the package
+              // Use dynamic import with ?url to get the worker URL
+              try {
+                // Import worker as URL - Vite will handle this
+                const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+                pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default || workerModule;
+              } catch (error) {
+                // Fallback: use unpkg CDN which is more reliable than cdnjs
+                const version = pdfjsLib.version || '5.4.530';
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+              }
             }
           }
         }
@@ -101,9 +115,16 @@ export async function parsePDF(file) {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
       } else {
-        // Use CDN for PDF.js worker (most reliable for web apps)
-        const version = pdfjsLib.version || '5.4.530';
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+        // For Vite web apps, use the worker from the package
+        try {
+          // Import worker as URL - Vite will handle this
+          const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default || workerModule;
+        } catch (error) {
+          // Fallback: use unpkg CDN which is more reliable than cdnjs
+          const version = pdfjsLib.version || '5.4.530';
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+        }
       }
     }
     
@@ -180,11 +201,18 @@ export async function parsePDFWithLayout(file) {
         // Set worker source using chrome.runtime.getURL() for Chrome extensions
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
           pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
-        } else {
-          // Use CDN for PDF.js worker (most reliable for web apps)
+      } else {
+        // For Vite web apps, use the worker from the package
+        try {
+          // Import worker as URL - Vite will handle this
+          const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default || workerModule;
+        } catch (error) {
+          // Fallback: use unpkg CDN which is more reliable
           const version = pdfjsLib.version || '5.4.530';
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
         }
+      }
       } else {
         // Try dynamic import - pdfjs-dist main entry is build/pdf.mjs
         const pdfjsModule = await import('pdfjs-dist');
@@ -198,11 +226,17 @@ export async function parsePDFWithLayout(file) {
             pdfjsLib.GlobalWorkerOptions = {};
           }
           // Set worker source for web app
-          // Use CDN or local path
+          // Use local worker from package
           if (typeof window !== 'undefined') {
-            // Use CDN for PDF.js worker (most reliable for web apps)
-            const version = pdfjsLib.version || '5.4.530';
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+            try {
+              // Import worker as URL - Vite will handle this
+              const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+              pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default || workerModule;
+            } catch (error) {
+              // Fallback: use unpkg CDN which is more reliable
+              const version = pdfjsLib.version || '5.4.530';
+              pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+            }
           }
         }
       }
@@ -230,9 +264,16 @@ export async function parsePDFWithLayout(file) {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
       } else {
-        // Use CDN for PDF.js worker (most reliable for web apps)
-        const version = pdfjsLib.version || '5.4.530';
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+        // For Vite web apps, use the worker from the package
+        try {
+          // Import worker as URL - Vite will handle this
+          const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default || workerModule;
+        } catch (error) {
+          // Fallback: use unpkg CDN which is more reliable than cdnjs
+          const version = pdfjsLib.version || '5.4.530';
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+        }
       }
     }
     
