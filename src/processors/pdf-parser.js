@@ -51,9 +51,11 @@ export async function parsePDF(file) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
           }
         } else {
-          // Try dynamic import
+          // Try dynamic import - pdfjs-dist main entry is build/pdf.mjs
           const pdfjsModule = await import('pdfjs-dist');
-          pdfjsLib = pdfjsModule.default || pdfjsModule;
+          
+          // pdfjs-dist exports the API directly (no default export in newer versions)
+          pdfjsLib = pdfjsModule;
           
           // Configure worker IMMEDIATELY after import (before any other operations)
           if (typeof window !== 'undefined' && pdfjsLib) {
@@ -65,8 +67,10 @@ export async function parsePDF(file) {
             if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
               pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
             } else {
-              // Fallback: use relative path if not in extension context
-              pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+              // Use CDN for PDF.js worker (most reliable for web apps)
+              // Get version from pdfjsLib or use fallback
+              const version = pdfjsLib.version || '5.4.530';
+              pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
             }
           }
         }
@@ -97,8 +101,9 @@ export async function parsePDF(file) {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
       } else {
-        // Fallback: use relative path if not in extension context
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+        // Use CDN for PDF.js worker (most reliable for web apps)
+        const version = pdfjsLib.version || '5.4.530';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
       }
     }
     
@@ -176,11 +181,17 @@ export async function parsePDFWithLayout(file) {
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
           pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
         } else {
-          // Fallback: use relative path if not in extension context
-          pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+          // Use CDN for PDF.js worker (most reliable for web apps)
+          const version = pdfjsLib.version || '5.4.530';
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
         }
       } else {
-        pdfjsLib = await import('pdfjs-dist');
+        // Try dynamic import - pdfjs-dist main entry is build/pdf.mjs
+        const pdfjsModule = await import('pdfjs-dist');
+        
+        // pdfjs-dist exports the API directly (no default export in newer versions)
+        pdfjsLib = pdfjsModule;
+        
         if (typeof window !== 'undefined' && pdfjsLib) {
           // Ensure GlobalWorkerOptions exists
           if (!pdfjsLib.GlobalWorkerOptions) {
@@ -190,7 +201,8 @@ export async function parsePDFWithLayout(file) {
           // Use CDN or local path
           if (typeof window !== 'undefined') {
             // Use CDN for PDF.js worker (most reliable for web apps)
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+            const version = pdfjsLib.version || '5.4.530';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
           }
         }
       }
@@ -218,8 +230,9 @@ export async function parsePDFWithLayout(file) {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
       } else {
-        // Fallback: use relative path if not in extension context
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+        // Use CDN for PDF.js worker (most reliable for web apps)
+        const version = pdfjsLib.version || '5.4.530';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
       }
     }
     
