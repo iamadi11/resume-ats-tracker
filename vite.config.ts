@@ -15,6 +15,10 @@ export default defineConfig({
         {
           src: 'assets/**/*',
           dest: 'assets'
+        },
+        {
+          src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+          dest: 'assets'
         }
       ]
     })

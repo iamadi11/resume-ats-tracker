@@ -139,13 +139,50 @@ class WorkerManager {
   /**
    * Handle worker error
    */
-  private handleWorkerError(error: ErrorEvent) {
-    console.error('Worker error:', error);
+  private handleWorkerError(error: ErrorEvent | Event) {
+    // Extract error message from ErrorEvent or Event object
+    let errorMessage = 'Worker error';
+    
+    try {
+      if (error instanceof ErrorEvent) {
+        // ErrorEvent has message, filename, lineno, colno
+        errorMessage = error.message || `Worker error at ${error.filename || 'unknown'}:${error.lineno || 0}`;
+      } else if (error instanceof Event) {
+        // Regular Event - try to extract info from target
+        const target = error.target as Worker;
+        if (target) {
+          // Try to get error from worker
+          const workerError = (target as any).error;
+          if (workerError) {
+            if (typeof workerError === 'string') {
+              errorMessage = workerError;
+            } else if (workerError instanceof Error) {
+              errorMessage = workerError.message;
+            } else if (workerError && typeof workerError === 'object' && 'message' in workerError) {
+              errorMessage = String(workerError.message);
+            } else {
+              errorMessage = `Worker error: ${error.type || 'unknown'}`;
+            }
+          } else {
+            errorMessage = `Worker error: ${error.type || 'unknown'}`;
+          }
+        } else {
+          errorMessage = `Worker error: ${error.type || 'unknown'}`;
+        }
+      } else {
+        errorMessage = String(error);
+      }
+    } catch (e) {
+      // Fallback if extraction fails
+      errorMessage = `Worker error: ${error.type || 'unknown'}`;
+    }
+    
+    console.error('Worker error:', errorMessage, error);
     
     // Reject all pending requests
     this.pendingRequests.forEach(({ reject, timeout }) => {
       clearTimeout(timeout);
-      reject(new Error(error.message || 'Worker error'));
+      reject(new Error(errorMessage));
     });
     this.pendingRequests.clear();
   }

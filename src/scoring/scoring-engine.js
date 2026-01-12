@@ -38,9 +38,59 @@ const WEIGHTS = {
  */
 export function calculateATSScore(resumeText, jobText, resume = null) {
   if (!resumeText || !jobText) {
+    // Return a complete breakdown structure even on error
+    const emptyBreakdown = {
+      keywordMatch: {
+        score: 0,
+        weight: WEIGHTS.KEYWORD_MATCH * 100,
+        weightedScore: 0,
+        details: {
+          matchedKeywords: 0,
+          missingKeywords: 0,
+          similarity: 0
+        }
+      },
+      skillsAlignment: {
+        score: 0,
+        weight: WEIGHTS.SKILLS_ALIGNMENT * 100,
+        weightedScore: 0,
+        details: {
+          hardSkills: { matched: 0, missing: 0, score: 0 },
+          softSkills: { matched: 0, missing: 0, score: 0 },
+          tools: { matched: 0, missing: 0, score: 0 }
+        }
+      },
+      formatting: {
+        score: 0,
+        weight: WEIGHTS.FORMATTING * 100,
+        weightedScore: 0,
+        details: {
+          issues: 0,
+          warnings: 0
+        }
+      },
+      impactMetrics: {
+        score: 0,
+        weight: WEIGHTS.IMPACT_METRICS * 100,
+        weightedScore: 0,
+        details: {
+          metricsCount: 0
+        }
+      },
+      readability: {
+        score: 0,
+        weight: WEIGHTS.READABILITY * 100,
+        weightedScore: 0,
+        details: {
+          wordCount: 0,
+          issues: 0
+        }
+      }
+    };
+    
     return {
       overallScore: 0,
-      breakdown: {},
+      breakdown: emptyBreakdown,
       explanation: 'Missing resume or job description text',
       recommendations: []
     };

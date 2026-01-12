@@ -33,6 +33,14 @@ export default function ScoreMeter({ score, breakdown }: ScoreMeterProps) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
+  // Check if breakdown is valid and has required properties
+  const hasValidBreakdown = breakdown && 
+    breakdown.keywordMatch && 
+    breakdown.skillsAlignment && 
+    breakdown.formatting && 
+    breakdown.impactMetrics && 
+    breakdown.readability;
+
   return (
     <div className="card">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -81,38 +89,44 @@ export default function ScoreMeter({ score, breakdown }: ScoreMeterProps) {
       </div>
 
       {/* Score Breakdown */}
-      <div className="space-y-3">
-        <ScoreBreakdownItem
-          label="Keyword Match"
-          score={breakdown.keywordMatch.score}
-          weight={breakdown.keywordMatch.weight}
-          details={breakdown.keywordMatch.details}
-        />
-        <ScoreBreakdownItem
-          label="Skills Alignment"
-          score={breakdown.skillsAlignment.score}
-          weight={breakdown.skillsAlignment.weight}
-          details={breakdown.skillsAlignment.details}
-        />
-        <ScoreBreakdownItem
-          label="Formatting"
-          score={breakdown.formatting.score}
-          weight={breakdown.formatting.weight}
-          details={breakdown.formatting.details}
-        />
-        <ScoreBreakdownItem
-          label="Impact & Metrics"
-          score={breakdown.impactMetrics.score}
-          weight={breakdown.impactMetrics.weight}
-          details={breakdown.impactMetrics.details}
-        />
-        <ScoreBreakdownItem
-          label="Readability"
-          score={breakdown.readability.score}
-          weight={breakdown.readability.weight}
-          details={breakdown.readability.details}
-        />
-      </div>
+      {hasValidBreakdown ? (
+        <div className="space-y-3">
+          <ScoreBreakdownItem
+            label="Keyword Match"
+            score={breakdown.keywordMatch.score}
+            weight={breakdown.keywordMatch.weight}
+            details={breakdown.keywordMatch.details}
+          />
+          <ScoreBreakdownItem
+            label="Skills Alignment"
+            score={breakdown.skillsAlignment.score}
+            weight={breakdown.skillsAlignment.weight}
+            details={breakdown.skillsAlignment.details}
+          />
+          <ScoreBreakdownItem
+            label="Formatting"
+            score={breakdown.formatting.score}
+            weight={breakdown.formatting.weight}
+            details={breakdown.formatting.details}
+          />
+          <ScoreBreakdownItem
+            label="Impact & Metrics"
+            score={breakdown.impactMetrics.score}
+            weight={breakdown.impactMetrics.weight}
+            details={breakdown.impactMetrics.details}
+          />
+          <ScoreBreakdownItem
+            label="Readability"
+            score={breakdown.readability.score}
+            weight={breakdown.readability.weight}
+            details={breakdown.readability.details}
+          />
+        </div>
+      ) : (
+        <div className="text-center text-sm text-gray-500 py-4">
+          Score breakdown is not available. Please try recalculating the score.
+        </div>
+      )}
     </div>
   );
 }

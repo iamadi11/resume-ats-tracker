@@ -25,6 +25,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content-script.js"],
+      "type": "module",
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -57,6 +58,9 @@
       "resources": ["assets/*", "src/scoring/worker/*.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; worker-src 'self'"
+  }
 }
 

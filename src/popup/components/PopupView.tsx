@@ -59,7 +59,7 @@ export default function PopupView() {
       <JobDescriptionInput />
 
       {/* Score Meter */}
-      {displayScore && (
+      {displayScore && displayScore.breakdown && (
         <>
           <ScoreMeter score={displayScore.overallScore} breakdown={displayScore.breakdown} />
           <PerformanceIndicator 

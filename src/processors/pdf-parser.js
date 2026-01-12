@@ -30,33 +30,45 @@ export async function parsePDF(file) {
       // Check if we're in a service worker context (no window object)
       const isServiceWorker = typeof window === 'undefined' && typeof self !== 'undefined';
       
+      // Note: PDF.js processing moved to popup context (has window object)
+      // Service worker context is no longer used for PDF parsing
+      // This code path should not be reached, but kept for safety
       if (isServiceWorker) {
-        // Service worker context - use dynamic import directly
-        // PDF.js should work in service workers, but we need to handle it carefully
-        const pdfjsModule = await import('pdfjs-dist');
-        pdfjsLib = pdfjsModule.default || pdfjsModule;
-        
-        // In service worker, we can't use worker threads easily
-        // Disable worker by setting to empty string or use a workaround
-        if (pdfjsLib.GlobalWorkerOptions) {
-          // Use CDN worker URL (should work in service worker)
-          pdfjsLib.GlobalWorkerOptions.workerSrc = 
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
+        throw new Error('PDF parsing is not supported in service worker context. Please process PDFs in the popup context.');
       } else {
         // Browser context (popup, content script, etc.)
         // Try to use global pdfjsLib if available (loaded via script tag)
         if (typeof window !== 'undefined' && window.pdfjsLib) {
           pdfjsLib = window.pdfjsLib;
+          // Ensure workerSrc is set even for global pdfjsLib
+          if (!pdfjsLib.GlobalWorkerOptions) {
+            pdfjsLib.GlobalWorkerOptions = {};
+          }
+          // Set worker source using chrome.runtime.getURL() for Chrome extensions
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
+          } else {
+            // Fallback: use relative path if not in extension context
+            pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+          }
         } else {
           // Try dynamic import
           const pdfjsModule = await import('pdfjs-dist');
           pdfjsLib = pdfjsModule.default || pdfjsModule;
           
-          // Configure worker for browser context
-          if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 
-              'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          // Configure worker IMMEDIATELY after import (before any other operations)
+          if (typeof window !== 'undefined' && pdfjsLib) {
+            // Initialize GlobalWorkerOptions immediately
+            if (!pdfjsLib.GlobalWorkerOptions) {
+              pdfjsLib.GlobalWorkerOptions = {};
+            }
+            // Set worker source using chrome.runtime.getURL() for Chrome extensions
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+              pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
+            } else {
+              // Fallback: use relative path if not in extension context
+              pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+            }
           }
         }
       }
@@ -77,6 +89,20 @@ export async function parsePDF(file) {
       throw new Error('Invalid file format. Expected File, ArrayBuffer, or Uint8Array.');
     }
 
+    // Final safety check: Ensure workerSrc is set before loading document
+    if (!pdfjsLib.GlobalWorkerOptions) {
+      pdfjsLib.GlobalWorkerOptions = {};
+    }
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      // Set worker source using chrome.runtime.getURL() for Chrome extensions
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
+      } else {
+        // Fallback: use relative path if not in extension context
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+      }
+    }
+    
     // Load PDF document
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
@@ -143,11 +169,31 @@ export async function parsePDFWithLayout(file) {
     try {
       if (typeof window !== 'undefined' && window.pdfjsLib) {
         pdfjsLib = window.pdfjsLib;
+        // Ensure workerSrc is set even for global pdfjsLib
+        if (!pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions = {};
+        }
+        // Set worker source using chrome.runtime.getURL() for Chrome extensions
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
+        } else {
+          // Fallback: use relative path if not in extension context
+          pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+        }
       } else {
         pdfjsLib = await import('pdfjs-dist');
-        if (typeof window !== 'undefined') {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = 
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        if (typeof window !== 'undefined' && pdfjsLib) {
+          // Ensure GlobalWorkerOptions exists
+          if (!pdfjsLib.GlobalWorkerOptions) {
+            pdfjsLib.GlobalWorkerOptions = {};
+          }
+          // Set worker source using chrome.runtime.getURL() for Chrome extensions
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
+          } else {
+            // Fallback: use relative path if not in extension context
+            pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+          }
         }
       }
     } catch (error) {
@@ -165,6 +211,20 @@ export async function parsePDFWithLayout(file) {
       throw new Error('Invalid file format.');
     }
 
+    // Final safety check: Ensure workerSrc is set before loading document
+    if (!pdfjsLib.GlobalWorkerOptions) {
+      pdfjsLib.GlobalWorkerOptions = {};
+    }
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      // Set worker source using chrome.runtime.getURL() for Chrome extensions
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
+      } else {
+        // Fallback: use relative path if not in extension context
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+      }
+    }
+    
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
 
