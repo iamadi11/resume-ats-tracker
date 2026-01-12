@@ -227,11 +227,36 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 /**
  * Handle extension icon click
+ * Injects or toggles the drawer on the current page
  */
-chrome.action.onClicked.addListener((tab) => {
-  // This only fires if no popup is set in manifest.json
-  // Since we have a popup, this won't typically fire
+chrome.action.onClicked.addListener(async (tab) => {
   console.log('[Service Worker] Extension icon clicked on tab:', tab.id);
+  
+  if (!tab.id) {
+    console.error('[Service Worker] No tab ID available');
+    return;
+  }
+
+  try {
+    // Try to toggle the drawer (if it exists) or inject it
+    await chrome.tabs.sendMessage(tab.id, {
+      type: 'TOGGLE_WIDGET'
+    });
+    console.log('[Service Worker] Drawer toggled successfully');
+  } catch (error) {
+    // If content script not loaded or drawer not injected, inject it
+    console.log('[Service Worker] Toggle failed, attempting to inject drawer:', error.message);
+    try {
+      await chrome.tabs.sendMessage(tab.id, {
+        type: MESSAGE_TYPES.INJECT_WIDGET
+      });
+      console.log('[Service Worker] Drawer injection message sent');
+    } catch (injectError) {
+      console.error('[Service Worker] Error injecting drawer:', injectError);
+      // Content script might not be loaded, try to wait and retry
+      // Or show a message to the user
+    }
+  }
 });
 
 // Handle keyboard commands
