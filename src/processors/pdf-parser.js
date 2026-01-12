@@ -44,12 +44,11 @@ export async function parsePDF(file) {
           if (!pdfjsLib.GlobalWorkerOptions) {
             pdfjsLib.GlobalWorkerOptions = {};
           }
-          // Set worker source using chrome.runtime.getURL() for Chrome extensions
-          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
-          } else {
-            // Fallback: use relative path if not in extension context
-            pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+          // Set worker source for web app
+          // Use CDN or local path
+          if (typeof window !== 'undefined') {
+            // Use CDN for PDF.js worker (most reliable for web apps)
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
           }
         } else {
           // Try dynamic import
@@ -187,12 +186,11 @@ export async function parsePDFWithLayout(file) {
           if (!pdfjsLib.GlobalWorkerOptions) {
             pdfjsLib.GlobalWorkerOptions = {};
           }
-          // Set worker source using chrome.runtime.getURL() for Chrome extensions
-          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('assets/pdf.worker.min.mjs');
-          } else {
-            // Fallback: use relative path if not in extension context
-            pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('assets/pdf.worker.min.mjs', import.meta.url).href;
+          // Set worker source for web app
+          // Use CDN or local path
+          if (typeof window !== 'undefined') {
+            // Use CDN for PDF.js worker (most reliable for web apps)
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
           }
         }
       }

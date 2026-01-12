@@ -132,7 +132,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             state.resume.rawText,
             state.jobDescription.text,
             state.resume
-          );
+          ) as Feedback;
           dispatch({ type: 'SET_FEEDBACK', payload: feedback });
         } catch (error) {
           // Feedback generation is optional, don't fail if it errors
