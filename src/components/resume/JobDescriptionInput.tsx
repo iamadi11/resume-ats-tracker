@@ -19,15 +19,18 @@ export default function JobDescriptionInput() {
   };
 
   const handlePaste = async (e: React.ClipboardEvent) => {
+    // Don't prevent default - allow normal paste behavior
     setIsPasting(true);
     const pastedText = e.clipboardData.getData('text');
-    setText(pastedText);
     
-    // Small delay to allow paste to complete
+    // Small delay to allow paste to complete naturally
     setTimeout(() => {
       setIsPasting(false);
-      if (pastedText.trim().length > 50) {
-        setJobDescription(pastedText);
+      // Get the updated text from the textarea after paste
+      const textarea = e.currentTarget as HTMLTextAreaElement;
+      const updatedText = textarea.value;
+      if (updatedText.trim().length > 50) {
+        setJobDescription(updatedText);
       }
     }, 100);
   };
@@ -44,6 +47,7 @@ export default function JobDescriptionInput() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
       className="card"
+      style={{ userSelect: 'auto' }}
     >
       <div className="flex items-center space-x-2 mb-2">
         <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -58,8 +62,9 @@ export default function JobDescriptionInput() {
         onPaste={handlePaste}
         onBlur={handleBlur}
         placeholder="Paste job description here..."
-        className="input-field min-h-[120px] resize-y"
+        className="input-field min-h-[120px] resize-y select-text"
         aria-label="Job description input"
+        style={{ userSelect: 'text' }}
       />
 
       {text && (
