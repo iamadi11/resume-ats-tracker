@@ -48,9 +48,31 @@ export default defineConfig({
           // UI bundles go to assets with hash
           return 'assets/[name]-[hash].js';
         },
-        chunkFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: (chunkInfo) => {
+          // Content script chunks should be in assets with relative paths that work
+          return 'assets/[name]-[hash].js';
+        },
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        manualChunks: (id) => {
+        manualChunks: (id, { getModuleInfo }) => {
+          // Check if this module is part of the content script dependency tree
+          const isContentScriptDep = (moduleId) => {
+            if (moduleId.includes('content/') && !moduleId.includes('drawer')) {
+              return true;
+            }
+            const info = getModuleInfo(moduleId);
+            if (!info) return false;
+            // Check if any importers are content script related
+            return info.importers.some(importer => 
+              importer.includes('content-script') || 
+              (importer.includes('content/') && !importer.includes('drawer'))
+            );
+          };
+          
+          // Don't split content script dependencies - bundle them together
+          if (isContentScriptDep(id)) {
+            return null; // Bundle into content-script.js
+          }
+          
           // Split PDF.js into separate chunk (it's large)
           if (id.includes('pdfjs-dist') || id.includes('pdf.js')) {
             return 'pdf';
@@ -59,7 +81,7 @@ export default defineConfig({
           if (id.includes('mammoth')) {
             return 'docx';
           }
-          // Split node_modules into vendor chunk
+          // Split node_modules into vendor chunk (but not for content script)
           if (id.includes('node_modules')) {
             // Keep React together
             if (id.includes('react') || id.includes('react-dom')) {
