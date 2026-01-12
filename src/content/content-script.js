@@ -8,17 +8,44 @@
  * - Communicate with background service worker
  * 
  * Runs in the page context (isolated from page's JavaScript)
+ * 
+ * Note: Uses dynamic imports to avoid ES module import resolution issues
+ * in Chrome extensions where relative paths don't resolve correctly.
  */
 
-import { sendMessageFromContent, onMessage } from '../shared/messaging.js';
-import { MESSAGE_TYPES, CONTENT_SCRIPT_ID } from '../shared/constants.js';
-import { extractJobFromPage, getPortalName } from './scrapers/index.js';
+// Load dependencies dynamically to avoid import resolution issues
+let sendMessageFromContent, onMessage, MESSAGE_TYPES, CONTENT_SCRIPT_ID, extractJobFromPage, getPortalName;
 
-// Mark that content script is loaded
-if (!window[CONTENT_SCRIPT_ID]) {
-  window[CONTENT_SCRIPT_ID] = true;
-  console.log('[Content Script] Content script loaded on:', window.location.href);
-}
+// Initialize content script after dependencies are loaded
+(async function initContentScript() {
+  try {
+    // Load dependencies - these will be bundled by Vite
+    // We use dynamic imports that Vite will handle at build time
+    const [messagingModule, constantsModule, scrapersModule] = await Promise.all([
+      import('../shared/messaging.js'),
+      import('../shared/constants.js'),
+      import('./scrapers/index.js')
+    ]);
+    
+    sendMessageFromContent = messagingModule.sendMessageFromContent;
+    onMessage = messagingModule.onMessage;
+    MESSAGE_TYPES = constantsModule.MESSAGE_TYPES;
+    CONTENT_SCRIPT_ID = constantsModule.CONTENT_SCRIPT_ID;
+    extractJobFromPage = scrapersModule.extractJobFromPage;
+    getPortalName = scrapersModule.getPortalName;
+    
+    // Mark that content script is loaded
+    if (!window[CONTENT_SCRIPT_ID]) {
+      window[CONTENT_SCRIPT_ID] = true;
+      console.log('[Content Script] Content script loaded on:', window.location.href);
+    }
+    
+    // Initialize the content script
+    init();
+  } catch (error) {
+    console.error('[Content Script] Error loading dependencies:', error);
+  }
+})();
 
 /**
  * Initialize content script
@@ -178,16 +205,41 @@ function injectWidget() {
     document.body.appendChild(drawerContainer);
 
     // Import and inject drawer
-    // The drawer is built as a separate chunk in assets/drawer-[hash].js
-    // We use dynamic import which Vite will resolve correctly at build time
+    // Use chrome.runtime.getURL to get the correct extension URL for the drawer bundle
     (async () => {
       try {
-        // Dynamic import - Vite will bundle this correctly
-        // The drawer module and its dependencies will be loaded
-        const drawerModule = await import('./drawer/DrawerApp.js');
+        // The drawer is built as assets/drawer-[hash].js
+        // We need to find it dynamically or use a known pattern
+        // For now, try common drawer bundle names
+        const possibleDrawerPaths = [
+          'assets/drawer.js',
+          // Vite will generate drawer-[hash].js, but we can't know the hash at runtime
+          // So we'll need to use import maps or a different approach
+        ];
+        
+        let drawerModule = null;
+        let lastError = null;
+        
+        // Try importing drawer using chrome.runtime.getURL
+        // Note: This requires knowing the exact filename or using import maps
+        try {
+          // First, try to import using a pattern that Vite might generate
+          // In production, we'd need to either:
+          // 1. Use import maps (not supported in Chrome extensions)
+          // 2. Bundle drawer into content script
+          // 3. Use a fixed filename for drawer
+          
+          // For now, try direct import - Vite should handle this
+          drawerModule = await import('./drawer/DrawerApp.js');
+        } catch (importError) {
+          lastError = importError;
+          // Fallback: try chrome.runtime.getURL if we know the path
+          // This won't work without knowing the exact hash, so we'll need a different solution
+          console.error('[Content Script] Direct import failed:', importError);
+        }
         
         if (!drawerModule || !drawerModule.injectDrawer) {
-          throw new Error('Drawer module does not export injectDrawer');
+          throw new Error('Drawer module not found or does not export injectDrawer');
         }
         
         const { injectDrawer } = drawerModule;

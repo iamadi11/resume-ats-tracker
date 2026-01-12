@@ -4,7 +4,7 @@
   "description": "Chrome Extension for ATS resume compatibility scoring",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-content-script-imports.js",
     "dev": "vite build --watch",
     "type-check": "tsc --noEmit"
   },
