@@ -265,23 +265,12 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   if (!isLoaded) {
-    console.log('[Service Worker] Content script not loaded after waiting, attempting to inject...');
-    // Try to inject content script programmatically
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content-script.js']
-      });
-      console.log('[Service Worker] Content script injected, waiting for initialization...');
-      // Wait for content script to initialize
-      await new Promise(resolve => setTimeout(resolve, 500));
-      isLoaded = await waitForContentScript(tab.id, 3, 300);
-    } catch (scriptError) {
-      console.error('[Service Worker] Error injecting content script:', scriptError);
-      // Content script might already be injected or page doesn't allow injection
-      // Try to send message anyway - it might work if script is loading
-      isLoaded = false;
-    }
+    console.log('[Service Worker] Content script not loaded after waiting.');
+    console.log('[Service Worker] Content scripts from manifest should auto-inject on page load.');
+    console.log('[Service Worker] If the page was open before extension install, please refresh the page.');
+    // Don't try to inject programmatically - content scripts from manifest handle this
+    // Programmatic injection with executeScript doesn't work well with ES modules
+    // The user should refresh the page for the content script to load properly
   }
 
   if (!isLoaded) {

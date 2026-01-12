@@ -178,38 +178,32 @@ function injectWidget() {
     document.body.appendChild(drawerContainer);
 
     // Import and inject drawer
-    // In development: direct import, in production: from assets
+    // The drawer is built as a separate chunk in assets/drawer-[hash].js
+    // We use dynamic import which Vite will resolve correctly at build time
     (async () => {
       try {
-        // Try direct import first (works in dev)
-        const module = await import('./drawer/DrawerApp.js');
-        const { injectDrawer } = module;
+        // Dynamic import - Vite will bundle this correctly
+        // The drawer module and its dependencies will be loaded
+        const drawerModule = await import('./drawer/DrawerApp.js');
+        
+        if (!drawerModule || !drawerModule.injectDrawer) {
+          throw new Error('Drawer module does not export injectDrawer');
+        }
+        
+        const { injectDrawer } = drawerModule;
         drawerRoot = injectDrawer(drawerContainer);
         console.log('[Content Script] Drawer injected successfully');
       } catch (error) {
-        console.log('[Content Script] Direct import failed, trying runtime URL:', error);
-        // Fallback: import from runtime URL (production build)
-        try {
-          // Get the drawer bundle URL - Vite will generate this as assets/drawer-[hash].js
-          // We need to find it dynamically or use a known pattern
-          const response = await fetch(chrome.runtime.getURL('assets/drawer.js'));
-          if (response.ok) {
-            const drawerUrl = chrome.runtime.getURL('assets/drawer.js');
-            const module = await import(drawerUrl);
-            const { injectDrawer } = module;
-            drawerRoot = injectDrawer(drawerContainer);
-            console.log('[Content Script] Drawer injected from runtime URL');
-          } else {
-            throw new Error('Drawer bundle not found');
-          }
-        } catch (fallbackError) {
-          console.error('[Content Script] Error injecting drawer:', fallbackError);
-          // Clean up on error
-          if (drawerContainer && document.body.contains(drawerContainer)) {
-            document.body.removeChild(drawerContainer);
-          }
-          drawerContainer = null;
+        console.error('[Content Script] Error injecting drawer:', error);
+        console.error('[Content Script] Error details:', error.message);
+        if (error.stack) {
+          console.error('[Content Script] Stack:', error.stack);
         }
+        // Clean up on error
+        if (drawerContainer && document.body.contains(drawerContainer)) {
+          document.body.removeChild(drawerContainer);
+        }
+        drawerContainer = null;
       }
     })();
   } catch (error) {
