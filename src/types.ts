@@ -133,6 +133,12 @@ export interface Feedback {
   };
 }
 
+export interface AnalysisProgress {
+  currentStep: string;
+  progress: number; // 0-100
+  steps: Array<{ label: string; completed: boolean }>;
+}
+
 export interface AppState {
   resume: Resume | null;
   jobDescription: JobDescription | null;
@@ -140,5 +146,6 @@ export interface AppState {
   feedback: Feedback | null;
   loading: boolean;
   error: string | null;
+  progress: AnalysisProgress | null;
 }
 

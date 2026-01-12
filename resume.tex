@@ -2,7 +2,7 @@
 % Senior Frontend Engineer Resume — ONE PAGE
 %-------------------------
 
-\documentclass[letterpaper,10.5pt]{article}
+\documentclass[letterpaper,10pt]{article}
 
 \usepackage[empty]{fullpage}
 \usepackage{titlesec}
@@ -27,13 +27,14 @@
 \addtolength{\oddsidemargin}{-0.50in}
 \addtolength{\textwidth}{1.00in}
 \addtolength{\topmargin}{-0.75in}
-\addtolength{\textheight}{1.60in}
+\addtolength{\textheight}{1.65in}
 
 \raggedright
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
 \setlength{\tabcolsep}{0pt}
 \setlength{\baselineskip}{1.1\baselineskip}
+\setlength{\footskip}{3.61pt}
 
 %-------------------------
 % Section Formatting
@@ -45,14 +46,14 @@
   {\vspace{-3pt}}
   [\color{sectiongray}\rule{\textwidth}{0.4pt}]
 
-\titlespacing{\section}{0pt}{2pt}{0pt}
+\titlespacing{\section}{0pt}{6pt}{0pt}
 
 %-------------------------
 % List Control
 %-------------------------
 \setlist[itemize]{
   leftmargin=0.15in,
-  topsep=4pt,
+  topsep=2pt,
   itemsep=5pt,
   parsep=0pt,
   partopsep=0pt
@@ -65,12 +66,12 @@
 
 \newcommand{\resumeSubheading}[4]{
   \item[]
-  \vspace{2pt}
+  \vspace{-2pt}
   \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
     \textbf{#1} & #2 \\
     \textit{#3} & \textit{#4} \\
   \end{tabular*}
-  \vspace{3pt}
+  \vspace{1pt}
 }
 
 \newcommand{\resumeSubHeadingListStart}{\begin{itemize}[label={}]}
@@ -96,7 +97,7 @@ Bengaluru, Karnataka, India\\[3pt]
 % Summary
 %-------------------------
 \section{Summary}
-Results-oriented Senior Frontend Engineer with \textbf{4+ years of experience} building scalable, high-performance web applications. Expert in \textbf{React, Next.js, and modern JavaScript ecosystems}. Proven track record of \textbf{architecting production systems, optimizing performance}, and delivering impactful solutions in \textbf{fintech, e-commerce, and enterprise domains}. Strong focus on \textbf{code quality, maintainability, and user experience}.
+Senior Frontend Engineer with 4+ years of experience building scalable, high-performance web applications in fintech, e-commerce, and enterprise domains. Expert in React, Next.js, and modern JavaScript ecosystems with a proven track record of architecting production systems and optimizing performance. Strong focus on code quality, maintainability, and user experience.
 
 %-------------------------
 % Experience
@@ -108,9 +109,9 @@ Results-oriented Senior Frontend Engineer with \textbf{4+ years of experience} b
 {Frontend Engineer II}{Mar 2024 -- Present}
 {Cashfree Payments}{Bengaluru, Karnataka}
 \begin{itemize}
-\resumeItem{Own and maintain \textbf{Risk WebApp} platform serving enterprise merchants processing millions of transactions monthly}
-\resumeItem{Architected \textbf{configurable rule engine} enabling real-time transaction blocking/flagging based on amount, velocity, and risk signals}
-\resumeItem{Enhanced \textbf{Video KYC platform} reliability with robust reconnection flows, reducing failure rates}
+\resumeItem{Own and maintain \textbf{Risk WebApp} platform serving enterprise merchants processing millions of transactions per month}
+\resumeItem{Architected \textbf{configurable rule engine} for real-time transaction blocking and flagging based on amount, velocity, and risk signals}
+\resumeItem{Enhanced \textbf{Video KYC platform} reliability with robust reconnection flows, reducing failure rates by 30\%}
 \resumeItem{\textbf{Tech:} React, TypeScript, Zustand, Semantic UI, REST APIs}
 \end{itemize}
 
@@ -118,7 +119,7 @@ Results-oriented Senior Frontend Engineer with \textbf{4+ years of experience} b
 {Software Engineer III}{Aug 2024 -- Mar 2025}
 {Moresand Technologies}{Bengaluru, Karnataka}
 \begin{itemize}
-\resumeItem{Led migration of legacy back-office to \textbf{React-based architecture}, improving maintainability and enabling 3x faster feature development}
+\resumeItem{Led migration of legacy back-office to \textbf{React-based architecture} with improved test coverage, enabling 3x faster feature development}
 \resumeItem{Designed and developed \textbf{MoreRooms} booking platform end-to-end, increasing user engagement by 40\%}
 \resumeItem{Implemented \textbf{PWA architecture} with offline capabilities, improving page load time by 50\%}
 \resumeItem{\textbf{Tech:} React, Next.js, React Query, Tailwind CSS, Node.js, Express.js}
@@ -129,14 +130,13 @@ Results-oriented Senior Frontend Engineer with \textbf{4+ years of experience} b
 {Tata 1mg}{Gurugram, Haryana}
 \begin{itemize}
 \resumeItem{Engineered \textbf{polygon-based serviceability engine} using React.js and Google Maps API, enabling 15-minute and 1-hour delivery zones}
-\resumeItem{Built centralized \textbf{Node.js microservice} for invoice PDF generation, reducing code duplication by 60\%}
-\resumeItem{Developed \textbf{PWA} for inventory management, reducing manual errors by 45\%}
+\resumeItem{Architected centralized \textbf{Node.js microservice} for invoice PDF generation, reducing code duplication by 60\%}
+\resumeItem{Implemented \textbf{PWA} for inventory management, reducing manual errors by 45\%}
 \resumeItem{Implemented real-time notifications using \textbf{WebPush, Redis, and SSE}, reducing SLA breaches from \textbf{70\% to 15\%}}
 \resumeItem{Optimized frontend build pipeline, reducing build time from \textbf{15 minutes to 3 minutes} (80\% reduction)}
 \resumeItem{Consolidated repositories into \textbf{monorepo architecture} with Turborepo, reducing deployment time by 30\%}
 \resumeItem{\textbf{Tech:} React, Node.js, Express.js, Webpack, Redis, Google Maps API, Turborepo}
 \end{itemize}
-
 
 \resumeSubHeadingListEnd
 
@@ -146,8 +146,8 @@ Results-oriented Senior Frontend Engineer with \textbf{4+ years of experience} b
 \section{Technical Skills}
 \textbf{Frontend:} React, Next.js, JavaScript, TypeScript, HTML5, CSS3, Tailwind CSS, Redux, React Query, Zustand, Semantic UI \\
 \textbf{Backend:} Node.js, Express.js, REST APIs, Microservices \\
-\textbf{Architecture:} Webpack, PWA, Monorepos (Turborepo), Code Splitting, Caching, Google Maps API \\
-\textbf{Testing \& DevOps:} Jest, React Testing Library, Git \\
+\textbf{Architecture:} Webpack, PWA, Monorepos (Turborepo), Code Splitting, Caching, Performance Optimization, Google Maps API \\
+\textbf{Testing \& DevOps:} Jest, React Testing Library, Git, CI/CD \\
 \textbf{Cloud \& Databases:} AWS, MySQL, MongoDB, Redis, SSIS
 
 %-------------------------
