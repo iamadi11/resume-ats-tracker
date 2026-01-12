@@ -237,15 +237,77 @@ chrome.action.onClicked.addListener(async (tab) => {
     return;
   }
 
+  // Get tab URL to check if we can inject
+  let tabInfo;
+  try {
+    tabInfo = await chrome.tabs.get(tab.id);
+  } catch (error) {
+    console.error('[Service Worker] Error getting tab info:', error);
+    return;
+  }
+  
+  const url = tabInfo.url || '';
+  
+  // Don't inject on chrome://, chrome-extension://, or about: pages
+  if (url.startsWith('chrome://') || 
+      url.startsWith('chrome-extension://') || 
+      url.startsWith('about:') ||
+      url.startsWith('moz-extension://')) {
+    console.log('[Service Worker] Cannot inject drawer on this page type:', url);
+    return;
+  }
+
+  // Check if content script is loaded, wait if needed
+  let isLoaded = await isContentScriptLoaded(tab.id);
+  if (!isLoaded) {
+    console.log('[Service Worker] Content script not immediately available, waiting...');
+    isLoaded = await waitForContentScript(tab.id, 3, 300);
+  }
+
+  if (!isLoaded) {
+    console.log('[Service Worker] Content script not loaded after waiting, attempting to inject...');
+    // Try to inject content script programmatically
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content-script.js']
+      });
+      console.log('[Service Worker] Content script injected, waiting for initialization...');
+      // Wait for content script to initialize
+      await new Promise(resolve => setTimeout(resolve, 500));
+      isLoaded = await waitForContentScript(tab.id, 3, 300);
+    } catch (scriptError) {
+      console.error('[Service Worker] Error injecting content script:', scriptError);
+      // Content script might already be injected or page doesn't allow injection
+      // Try to send message anyway - it might work if script is loading
+      isLoaded = false;
+    }
+  }
+
+  if (!isLoaded) {
+    console.error('[Service Worker] Content script not available. The page may need to be refreshed.');
+    // Still try to send message - content script might be loading
+  }
+
+  // Try to toggle or inject drawer
   try {
     // Try to toggle the drawer (if it exists) or inject it
-    await chrome.tabs.sendMessage(tab.id, {
+    const response = await chrome.tabs.sendMessage(tab.id, {
       type: 'TOGGLE_WIDGET'
     });
     console.log('[Service Worker] Drawer toggled successfully');
   } catch (error) {
-    // If content script not loaded or drawer not injected, inject it
-    console.log('[Service Worker] Toggle failed, attempting to inject drawer:', error.message);
+    // If toggle failed, try to inject drawer
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('[Service Worker] Toggle failed, attempting to inject drawer:', errorMessage);
+    
+    if (errorMessage.includes('Could not establish connection') || 
+        errorMessage.includes('Receiving end does not exist')) {
+      // Content script definitely not loaded
+      console.error('[Service Worker] Content script not available. Please refresh the page and try again.');
+      return;
+    }
+    
     try {
       await chrome.tabs.sendMessage(tab.id, {
         type: MESSAGE_TYPES.INJECT_WIDGET
@@ -253,8 +315,15 @@ chrome.action.onClicked.addListener(async (tab) => {
       console.log('[Service Worker] Drawer injection message sent');
     } catch (injectError) {
       console.error('[Service Worker] Error injecting drawer:', injectError);
-      // Content script might not be loaded, try to wait and retry
-      // Or show a message to the user
+      // Final fallback: try reloading the tab to ensure content script loads
+      console.log('[Service Worker] Attempting to reload tab to load content script...');
+      try {
+        await chrome.tabs.reload(tab.id);
+        // After reload, content script should auto-inject
+        console.log('[Service Worker] Tab reloaded. Content script should load automatically.');
+      } catch (reloadError) {
+        console.error('[Service Worker] Could not reload tab:', reloadError);
+      }
     }
   }
 });
