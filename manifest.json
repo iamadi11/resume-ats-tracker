@@ -59,8 +59,18 @@
       "matches": ["<all_urls>"]
     }
   ],
+  
+  "commands": {
+    "toggle-drawer": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      },
+      "description": "Toggle Resume ATS Tracker drawer"
+    }
+  },
+  
   "content_security_policy": {
     "extension_pages": "script-src 'self'; worker-src 'self'"
   }
 }
-

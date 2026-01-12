@@ -27,6 +27,18 @@ function init() {
   // Set up message listeners
   setupMessageListeners();
   
+  // Auto-inject drawer on job portal pages
+  const url = window.location.href;
+  const jobPortals = ['linkedin.com', 'indeed.com', 'glassdoor.com', 'monster.com', 'ziprecruiter.com'];
+  const isJobPortal = jobPortals.some(portal => url.includes(portal));
+  
+  if (isJobPortal) {
+    // Wait a bit for page to stabilize, then inject drawer
+    setTimeout(() => {
+      injectWidget();
+    }, 1000);
+  }
+  
   // Observe DOM for job posting detection (to be implemented)
   // observeJobPostings();
   
@@ -59,14 +71,20 @@ function setupMessageListeners() {
           break;
           
         case MESSAGE_TYPES.INJECT_WIDGET:
-          // Inject floating widget (to be implemented)
+          // Inject floating drawer widget
           injectWidget();
           sendResponse({ type: MESSAGE_TYPES.PONG });
           break;
           
         case MESSAGE_TYPES.REMOVE_WIDGET:
-          // Remove floating widget (to be implemented)
+          // Remove floating drawer widget
           removeWidget();
+          sendResponse({ type: MESSAGE_TYPES.PONG });
+          break;
+          
+        case 'TOGGLE_WIDGET':
+          // Toggle drawer visibility
+          toggleWidget();
           sendResponse({ type: MESSAGE_TYPES.PONG });
           break;
           
@@ -134,22 +152,105 @@ function extractJobDescription() {
   }
 }
 
+// Drawer state management
+let drawerRoot = null;
+let drawerContainer = null;
+
 /**
- * Inject floating widget into page
- * (Placeholder - to be implemented)
+ * Inject drawer widget into page
  */
 function injectWidget() {
-  console.log('[Content Script] Injecting widget (not yet implemented)');
-  // Widget injection logic will be implemented here
+  console.log('[Content Script] Injecting drawer widget');
+  
+  // Check if drawer already exists
+  if (drawerContainer && document.body.contains(drawerContainer)) {
+    console.log('[Content Script] Drawer already exists');
+    return;
+  }
+
+  try {
+    // Create container for drawer
+    drawerContainer = document.createElement('div');
+    drawerContainer.id = 'ats-drawer-root';
+    drawerContainer.setAttribute('data-extension', 'resume-ats-tracker');
+    
+    // Append to body
+    document.body.appendChild(drawerContainer);
+
+    // Import and inject drawer
+    // In development: direct import, in production: from assets
+    (async () => {
+      try {
+        // Try direct import first (works in dev)
+        const module = await import('./drawer/DrawerApp.js');
+        const { injectDrawer } = module;
+        drawerRoot = injectDrawer(drawerContainer);
+        console.log('[Content Script] Drawer injected successfully');
+      } catch (error) {
+        console.log('[Content Script] Direct import failed, trying runtime URL:', error);
+        // Fallback: import from runtime URL (production build)
+        try {
+          // Get the drawer bundle URL - Vite will generate this as assets/drawer-[hash].js
+          // We need to find it dynamically or use a known pattern
+          const response = await fetch(chrome.runtime.getURL('assets/drawer.js'));
+          if (response.ok) {
+            const drawerUrl = chrome.runtime.getURL('assets/drawer.js');
+            const module = await import(drawerUrl);
+            const { injectDrawer } = module;
+            drawerRoot = injectDrawer(drawerContainer);
+            console.log('[Content Script] Drawer injected from runtime URL');
+          } else {
+            throw new Error('Drawer bundle not found');
+          }
+        } catch (fallbackError) {
+          console.error('[Content Script] Error injecting drawer:', fallbackError);
+          // Clean up on error
+          if (drawerContainer && document.body.contains(drawerContainer)) {
+            document.body.removeChild(drawerContainer);
+          }
+          drawerContainer = null;
+        }
+      }
+    })();
+  } catch (error) {
+    console.error('[Content Script] Error creating drawer container:', error);
+  }
 }
 
 /**
- * Remove floating widget from page
- * (Placeholder - to be implemented)
+ * Remove drawer widget from page
  */
 function removeWidget() {
-  console.log('[Content Script] Removing widget (not yet implemented)');
-  // Widget removal logic will be implemented here
+  console.log('[Content Script] Removing drawer widget');
+  
+  if (drawerRoot) {
+    try {
+      drawerRoot.unmount();
+      drawerRoot = null;
+    } catch (error) {
+      console.error('[Content Script] Error unmounting drawer:', error);
+    }
+  }
+  
+  if (drawerContainer && document.body.contains(drawerContainer)) {
+    try {
+      document.body.removeChild(drawerContainer);
+      drawerContainer = null;
+    } catch (error) {
+      console.error('[Content Script] Error removing drawer container:', error);
+    }
+  }
+}
+
+/**
+ * Toggle drawer visibility
+ */
+function toggleWidget() {
+  if (drawerContainer && document.body.contains(drawerContainer)) {
+    removeWidget();
+  } else {
+    injectWidget();
+  }
 }
 
 /**

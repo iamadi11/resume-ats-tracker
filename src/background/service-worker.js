@@ -136,6 +136,37 @@ const cleanup = onMessage(async (message, sender, sendResponse) => {
         sendResponse({ type: MESSAGE_TYPES.PONG });
         break;
         
+      case 'TOGGLE_DRAWER':
+        // Toggle drawer widget on current page
+        const activeTab = await getActiveTab();
+        if (activeTab && activeTab.id) {
+          try {
+            await chrome.tabs.sendMessage(activeTab.id, {
+              type: 'TOGGLE_WIDGET'
+            });
+            sendResponse({ type: MESSAGE_TYPES.PONG });
+          } catch (error) {
+            // If content script not loaded, try to inject drawer
+            try {
+              await chrome.tabs.sendMessage(activeTab.id, {
+                type: MESSAGE_TYPES.INJECT_WIDGET
+              });
+              sendResponse({ type: MESSAGE_TYPES.PONG });
+            } catch (injectError) {
+              sendResponse({
+                type: MESSAGE_TYPES.ERROR,
+                payload: { error: 'Could not toggle drawer. Please refresh the page.' }
+              });
+            }
+          }
+        } else {
+          sendResponse({
+            type: MESSAGE_TYPES.ERROR,
+            payload: { error: 'No active tab found' }
+          });
+        }
+        return true; // Keep channel open for async response
+        
       case 'GET_CURRENT_STATE':
         // Return current state (to be implemented with storage)
         sendResponse({
@@ -201,6 +232,30 @@ chrome.action.onClicked.addListener((tab) => {
   // This only fires if no popup is set in manifest.json
   // Since we have a popup, this won't typically fire
   console.log('[Service Worker] Extension icon clicked on tab:', tab.id);
+});
+
+// Handle keyboard commands
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'toggle-drawer') {
+    const activeTab = await getActiveTab();
+    if (activeTab && activeTab.id) {
+      try {
+        await chrome.tabs.sendMessage(activeTab.id, {
+          type: 'TOGGLE_WIDGET'
+        });
+      } catch (error) {
+        console.error('[Service Worker] Error toggling drawer:', error);
+        // Try to inject drawer if content script not loaded
+        try {
+          await chrome.tabs.sendMessage(activeTab.id, {
+            type: MESSAGE_TYPES.INJECT_WIDGET
+          });
+        } catch (injectError) {
+          console.error('[Service Worker] Error injecting drawer:', injectError);
+        }
+      }
+    }
+  }
 });
 
 // Utility functions
@@ -305,4 +360,139 @@ function detectFormatFromMimeType(mimeType, fileName) {
   }
 
   return undefined;
+}
+
+/**
+ * Check if content script is loaded on a tab
+ * 
+ * @param {number} tabId - Tab ID to check
+ * @returns {Promise<boolean>} True if content script is loaded
+ */
+async function isContentScriptLoaded(tabId) {
+  try {
+    // Try to ping the content script
+    const response = await chrome.tabs.sendMessage(tabId, {
+      type: MESSAGE_TYPES.PING
+    });
+    return response && response.type === MESSAGE_TYPES.PONG;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Wait for content script to be ready with retries
+ * 
+ * @param {number} tabId - Tab ID to check
+ * @param {number} maxRetries - Maximum number of retries
+ * @param {number} delayMs - Delay between retries in milliseconds
+ * @returns {Promise<boolean>} True if content script is loaded
+ */
+async function waitForContentScript(tabId, maxRetries = 3, delayMs = 300) {
+  for (let i = 0; i < maxRetries; i++) {
+    const isLoaded = await isContentScriptLoaded(tabId);
+    if (isLoaded) {
+      return true;
+    }
+    
+    // Wait before retrying (except on last attempt)
+    if (i < maxRetries - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Handle job extraction from page
+ * Forwards extraction request to content script and returns result
+ * 
+ * @param {number} tabId - Tab ID to extract job from (optional, uses active tab if not provided)
+ * @param {Function} sendResponse - Response callback
+ */
+async function handleExtractJobFromPage(tabId, sendResponse) {
+  try {
+    // Get tab ID if not provided
+    let targetTabId = tabId;
+    if (!targetTabId) {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!activeTab || !activeTab.id) {
+        throw new Error('No active tab found');
+      }
+      targetTabId = activeTab.id;
+    }
+
+    // Check if content script is loaded, wait with retries if needed
+    let isLoaded = await isContentScriptLoaded(targetTabId);
+    if (!isLoaded) {
+      console.log('[Service Worker] Content script not immediately available, waiting...');
+      // Wait for content script to load (it might still be initializing)
+      isLoaded = await waitForContentScript(targetTabId, 3, 300);
+    }
+
+    if (!isLoaded) {
+      // Content script still not available
+      const tab = await chrome.tabs.get(targetTabId);
+      const url = tab.url || '';
+      
+      if (url.startsWith('chrome://') || 
+          url.startsWith('chrome-extension://') || 
+          url.startsWith('about:') ||
+          url.startsWith('moz-extension://')) {
+        throw new Error('Cannot extract from this page type. Please navigate to a job portal page (e.g., LinkedIn, Indeed, Glassdoor).');
+      } else {
+        throw new Error('Content script is not available on this page. Please refresh the page and try again, or make sure you are on a job portal page.');
+      }
+    }
+
+    // Send message to content script in the target tab
+    const response = await chrome.tabs.sendMessage(targetTabId, {
+      type: MESSAGE_TYPES.EXTRACT_JOB_FROM_PAGE
+    });
+
+    if (!response) {
+      throw new Error('No response from content script. Make sure you are on a job portal page.');
+    }
+
+    // Check if extraction was successful
+    if (response.type === MESSAGE_TYPES.JOB_EXTRACTED) {
+      sendResponse({
+        type: MESSAGE_TYPES.JOB_EXTRACTED,
+        payload: response.payload
+      });
+    } else if (response.type === MESSAGE_TYPES.ERROR) {
+      sendResponse({
+        type: MESSAGE_TYPES.ERROR,
+        payload: response.payload || { error: 'Failed to extract job description' }
+      });
+    } else {
+      // Unexpected response type
+      sendResponse({
+        type: MESSAGE_TYPES.ERROR,
+        payload: { error: 'Unexpected response from content script' }
+      });
+    }
+  } catch (error) {
+    console.error('[Service Worker] Error in handleExtractJobFromPage:', error);
+    
+    // Extract error message (handle both Error objects and strings)
+    const errorMessage = error instanceof Error ? error.message : String(error || 'Unknown error');
+    
+    // Handle specific Chrome extension errors
+    if (errorMessage.includes('Could not establish connection') || 
+        errorMessage.includes('Receiving end does not exist')) {
+      sendResponse({
+        type: MESSAGE_TYPES.ERROR,
+        payload: { 
+          error: 'Content script not available. Please refresh the page and try again, or navigate to a job portal page.' 
+        }
+      });
+    } else {
+      sendResponse({
+        type: MESSAGE_TYPES.ERROR,
+        payload: { error: errorMessage || 'Failed to extract job description' }
+      });
+    }
+  }
 }

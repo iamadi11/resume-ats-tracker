@@ -32,13 +32,18 @@ export default defineConfig({
         sidepanel: resolve(__dirname, 'src/sidepanel/index.html'),
         options: resolve(__dirname, 'src/options/index.html'),
         'content-script': resolve(__dirname, 'src/content/content-script.js'),
-        'service-worker': resolve(__dirname, 'src/background/service-worker.js')
+        'service-worker': resolve(__dirname, 'src/background/service-worker.js'),
+        'drawer': resolve(__dirname, 'src/content/drawer/DrawerApp.js')
       },
       output: {
         entryFileNames: (chunkInfo) => {
           // Service worker and content script go to root
           if (chunkInfo.name === 'content-script' || chunkInfo.name === 'service-worker') {
             return '[name].js';
+          }
+          // Drawer goes to assets (will be imported by content script)
+          if (chunkInfo.name === 'drawer') {
+            return 'assets/drawer-[hash].js';
           }
           // UI bundles go to assets with hash
           return 'assets/[name]-[hash].js';
